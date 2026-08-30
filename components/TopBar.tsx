@@ -45,9 +45,9 @@ export default function TopBar({ onOpenSettings }: { onOpenSettings: () => void 
 
         <div className="ml-1 flex items-center gap-2 rounded-full py-1 pl-1 pr-2 hover:bg-surface">
           <span className="flex h-7 w-7 items-center justify-center rounded-full bg-brand-soft text-xs font-semibold text-brand">
-            MR
+            DT
           </span>
-          <span className="hidden text-sm text-ink sm:inline">Madhur Rastogi</span>
+          <span className="hidden text-sm text-ink sm:inline">Demo Teacher</span>
           <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
         </div>
       </div>

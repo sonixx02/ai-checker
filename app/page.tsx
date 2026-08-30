@@ -17,6 +17,7 @@ import {
 } from "@/lib/preflight";
 import type { ProviderChoice } from "@/lib/providers";
 import { loadSettings, saveSettings } from "@/lib/settings";
+import { cacheKey, hashFile, loadCached, saveCached } from "@/lib/resultCache";
 import { buildMappings, type JoinPair } from "@/lib/buildMappings";
 import { countPages, rasterizeFile, type PageImage } from "@/lib/rasterize";
 import { validateQuestions, type QuestionProblems } from "@/lib/validateQuestions";
@@ -30,6 +31,7 @@ type Screen = "upload" | "processing" | "mapping" | "problem";
 
 type Results = {
   usedProvider: { name: string; model: string } | null;
+  fromCache: boolean;
   questions: Question[];
   blocks: AnswerBlock[];
   mappings: Mapping[];
@@ -121,6 +123,35 @@ export default function Home() {
     try {
       const questionPages = await rasterizeFile(questionPaper.file);
       const answerPages = await rasterizeFile(answerSheet.file);
+
+      const [questionHash, answerHash] = await Promise.all([
+        hashFile(questionPaper.file),
+        hashFile(answerSheet.file),
+      ]);
+      const key = cacheKey(questionHash, answerHash, {
+        name: provider.name,
+        model: provider.model,
+      });
+
+      const cached = loadCached(key);
+      if (cached !== null) {
+        setResults({
+          usedProvider: { name: provider.name, model: provider.model },
+          fromCache: true,
+          questions: cached.questions,
+          blocks: cached.blocks,
+          mappings: buildMappings(
+            cached.questions,
+            cached.blocks,
+            cached.pairs,
+            CONFIDENCE_THRESHOLD,
+          ),
+          answerPages,
+          problems: validateQuestions(cached.questions),
+        });
+        setScreen("mapping");
+        return;
+      }
 
       const questionImages: string[] = [];
       for (const page of questionPages) {
@@ -217,8 +248,11 @@ export default function Home() {
         CONFIDENCE_THRESHOLD,
       );
 
+      saveCached(key, { questions, blocks, pairs });
+
       setResults({
         usedProvider,
+        fromCache: false,
         questions,
         blocks,
         mappings,
@@ -239,17 +273,11 @@ export default function Home() {
       <Sidebar
         collapsed={sidebarCollapsed || screen !== "upload"}
         onToggle={() => setSidebarCollapsed((value) => !value)}
-        onOpenSettings={() => {
-          setScreen("upload");
-          setSettingsOpen(true);
-        }}
+        onOpenSettings={() => setSettingsOpen(true)}
       />
 
       <div className="flex min-h-screen min-w-0 flex-1 flex-col">
-        <TopBar onOpenSettings={() => {
-          setScreen("upload");
-          setSettingsOpen(true);
-        }} />
+        <TopBar onOpenSettings={() => setSettingsOpen(true)} />
 
         {screen === "upload" && (
           <UploadScreen
@@ -286,6 +314,7 @@ export default function Home() {
         {screen === "mapping" && results !== null && (
           <MappingScreen
             usedProvider={results.usedProvider}
+            fromCache={results.fromCache}
             mappings={results.mappings}
             questions={results.questions}
             blocks={results.blocks}

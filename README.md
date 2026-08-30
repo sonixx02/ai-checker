@@ -63,6 +63,20 @@ Sample PDFs to try are in `test-data/`, with a ground-truth table in
   output first, and warns on models without a JSON mode
 - The results screen states which provider and model actually served the run
 
+**Cost and abuse control**
+
+- Results are cached in the browser against a SHA-256 hash of both files plus
+  the chosen provider and model. Re-running the same pair costs nothing: on a
+  cache hit the pages are re-rasterized locally and no model call is made. The
+  banner says when a result was reused.
+- The cache stores extracted text and regions only, never page images, so it
+  stays inside browser storage limits. Five results are kept, oldest evicted,
+  expiring after seven days.
+- Changing model or provider deliberately misses the cache, because a different
+  model produces different output.
+- Answer-sheet pages are requested three at a time, with retry and backoff, so
+  one large upload cannot burst through the rate limit.
+
 **Guardrails that avoid wasted API calls**
 
 | Check | When | What it saves |
@@ -74,6 +88,31 @@ Sample PDFs to try are in `test-data/`, with a ground-truth table in
 | Answer sheet longer than the free tier allows | at upload | warns before you start |
 
 Each names which file is at fault.
+
+## Running costs, and what happens when the key runs out
+
+The deployed app uses the operator's Gemini key, so visitors spend the
+operator's quota. One full run of a seven-page answer sheet costs nine model
+calls: one for the question paper, seven for the answer pages, one for the
+join. The Gemini free tier allows roughly 10 requests per minute and a few
+hundred per day, so a shared deployment supports a couple of dozen runs a day
+before it is exhausted.
+
+Three things reduce that pressure:
+
+- **Caching.** Repeating the same pair of files costs nothing.
+- **Guardrails.** A wrong upload is rejected before spending calls, not after.
+- **Bring your own key.** Settings accepts an OpenRouter key, and the run then
+  uses the visitor's quota rather than the operator's. The picker lists only
+  models that can read images and marks the free ones.
+
+If the built-in key is exhausted the app fails with the provider's own error
+rather than silently degrading, and the visitor can switch to their own key
+without reloading or losing the current result.
+
+There is no server-side rate limiting or authentication, because the brief
+excludes both. A public deployment is therefore usable by anyone who has the
+link, bounded only by the quota of whichever key is in use.
 
 ## What it does not support
 
@@ -88,8 +127,10 @@ Each names which file is at fault.
 - **Grading hand-drawn diagrams.** Diagrams are located and highlighted like
   any other region and described in text, but marks awarded for them are
   approximate.
-- **Persistence.** Nothing is stored. Reloading loses the result, by design —
-  the brief asks for no database.
+- **Persistence.** Nothing is stored on a server. The browser keeps a small
+  cache of recent results so repeats are free, but reloading with different
+  files starts fresh, and no database is used.
+- **Server-side rate limiting or authentication.** Excluded by the brief.
 - **More than one student.** One answer sheet per run.
 
 ## Approach

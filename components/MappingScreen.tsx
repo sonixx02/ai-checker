@@ -10,6 +10,7 @@ import type { AnswerBlock, Mapping, Question } from "@/lib/types";
 
 type Props = {
   usedProvider: { name: string; model: string } | null;
+  fromCache: boolean;
   mappings: Mapping[];
   questions: Question[];
   blocks: AnswerBlock[];
@@ -21,6 +22,7 @@ type MobileTab = "questions" | "answer-sheet";
 
 export default function MappingScreen({
   usedProvider,
+  fromCache,
   mappings,
   questions,
   blocks,
@@ -117,6 +119,11 @@ export default function MappingScreen({
             {usedProvider.name === "openrouter" ? "OpenRouter" : "Gemini"}
           </span>{" "}
           &middot; <span className="font-mono">{usedProvider.model}</span>
+          {fromCache && (
+            <span className="ml-2 rounded-full bg-surface px-2 py-0.5">
+              reused earlier result, no new model calls
+            </span>
+          )}
         </p>
       )}
 
