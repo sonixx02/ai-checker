@@ -1,18 +1,37 @@
-import { Bell, ChevronDown, CircleHelp, ClipboardList, Settings } from "lucide-react";
+import {
+  ArrowLeft,
+  Bell,
+  ChevronDown,
+  CircleHelp,
+  ClipboardList,
+  Settings,
+} from "lucide-react";
 
-export default function TopBar({ onOpenSettings }: { onOpenSettings: () => void }) {
+type Props = {
+  onOpenSettings: () => void;
+  onBack: (() => void) | null;
+};
+
+export default function TopBar({ onOpenSettings, onBack }: Props) {
   return (
     <header className="flex items-center justify-between border-b border-line bg-white px-4 py-2.5">
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <button
-          type="button"
-          aria-label="Back"
-          className="flex h-7 w-7 items-center justify-center rounded-lg hover:bg-surface"
-        >
-          <span aria-hidden className="text-base leading-none">&#8592;</span>
-        </button>
-        <ClipboardList className="h-4 w-4" />
-        <span>Exams</span>
+        {onBack !== null ? (
+          <button
+            type="button"
+            onClick={onBack}
+            aria-label="Back to upload"
+            className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-ink hover:bg-surface"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span className="text-sm font-medium">New assessment</span>
+          </button>
+        ) : (
+          <>
+            <ClipboardList className="h-4 w-4" />
+            <span>Exams</span>
+          </>
+        )}
       </div>
 
       <div className="flex items-center gap-1">

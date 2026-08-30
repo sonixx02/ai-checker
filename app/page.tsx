@@ -80,6 +80,15 @@ export default function Home() {
 
   const [settingsOpen, setSettingsOpen] = useState(false);
 
+  function startOver() {
+    setProblem(null);
+    setResults(null);
+    setQuestionPaper(null);
+    setAnswerSheet(null);
+    setError(null);
+    setScreen("upload");
+  }
+
   function changeProvider(next: ProviderChoice) {
     setProvider(next);
     saveSettings(next);
@@ -277,7 +286,10 @@ export default function Home() {
       />
 
       <div className="flex min-h-screen min-w-0 flex-1 flex-col">
-        <TopBar onOpenSettings={() => setSettingsOpen(true)} />
+        <TopBar
+          onOpenSettings={() => setSettingsOpen(true)}
+          onBack={screen === "upload" ? null : startOver}
+        />
 
         {screen === "upload" && (
           <UploadScreen
@@ -302,12 +314,7 @@ export default function Home() {
         {screen === "problem" && problem !== null && (
           <ProblemScreen
             problem={problem}
-            onStartOver={() => {
-              setProblem(null);
-              setQuestionPaper(null);
-              setAnswerSheet(null);
-              setScreen("upload");
-            }}
+            onStartOver={startOver}
           />
         )}
 
