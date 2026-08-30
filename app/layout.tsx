@@ -1,0 +1,24 @@
+import type { Metadata } from "next";
+import { Geist } from "next/font/google";
+import "./globals.css";
+
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+export const metadata: Metadata = {
+  title: "VedaAI — Answer Mapping",
+  description:
+    "Upload a question paper and a handwritten answer sheet to map answers to questions.",
+};
+
+export default function RootLayout({ children }: LayoutProps<"/">) {
+  return (
+    <html lang="en" className={`${geistSans.variable} h-full antialiased`}>
+      <body className="min-h-full flex flex-col bg-surface text-ink">
+        {children}
+      </body>
+    </html>
+  );
+}
